@@ -1,0 +1,13 @@
+{
+  "name": "com.apriltag.unity",
+  "version": "1.0.0",
+  "displayName": "AprilTag Unity Runtime",
+  "description": "Standalone AprilTag detection and visualization runtime for Unity.",
+  "unity": "2021.3",
+  "keywords": ["apriltag", "computer-vision", "ar", "xr"],
+  "documentationUrl": "https://github.com/AprilTagUnityLib",
+  "licensesUrl": "https://github.com/AprilTagUnityLib/blob/main/Runtime/LICENSE",
+  "author": {
+    "name": "AprilTag Unity Contributors"
+  }
+}

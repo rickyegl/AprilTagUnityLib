@@ -1,234 +1,42 @@
-# AprilTagUnity
+# AprilTag Unity Runtime Package
 
-A Unity project that implements AprilTag detection for Meta Quest VR headsets using the Meta Passthrough Camera API. This project enables real-time marker detection and tracking in mixed reality applications.
+This repository contains a standalone Unity Package Manager (UPM) package that exposes AprilTag detection utilities for Unity projects. The runtime embeds the native AprilTag library together with C# bindings and GPU preprocessing kernels so that no additional setup is required inside your project.
 
-## Overview
+## Package contents
 
-AprilTagUnity combines the power of:
-- **AprilTag detection** using locally integrated AprilTag library (originally from Keijiro Takahashi)
-- **Meta Passthrough Camera API** for accessing the Quest's camera feed
-- **Unity XR** for VR/MR application development
-
-The project provides a seamless way to detect and track AprilTag markers in real-time within VR environments, enabling applications like:
-- Augmented reality overlays
-- Spatial tracking and calibration
-- Mixed reality interactions
-- Object placement and anchoring
-
-## Features
-
-- 🎯 **Real-time AprilTag Detection**: Detect multiple AprilTag markers simultaneously
-- 📱 **Meta Quest Integration**: Works with Quest 2, Quest Pro, and Quest 3
-- 🔧 **Easy Setup**: Automatic configuration with setup helper scripts
-- 🎨 **Visual Feedback**: Configurable visualization for detected tags
-- ⚡ **Performance Optimized**: Configurable detection frequency and resolution scaling
-- 🔍 **Reflection-based Integration**: No compile-time dependencies on Meta's Passthrough Camera API
-
-## Requirements
-
-### Hardware
-- Meta Quest 2, Quest Pro, or Quest 3 headset
-- Android development environment (for building APKs)
-
-### Software
-- Unity 2022.3 LTS or later
-- Meta XR SDK v78.0.0 or later
-- Android SDK with API level 32+
+- **Runtime scripts** (`Runtime/*.cs`, `Runtime/Scripts/*.cs`)
+  - High-level controller and helpers for running AprilTag detection
+  - GPU preprocessors and visualization utilities
+- **Resources** (`Runtime/Resources`)
+  - Compute shaders used to accelerate image preprocessing
+- **Embedded AprilTag library** (`Runtime/Library`)
+  - Managed bindings, assemblies, and platform-specific native plugins
+- **License** (`Runtime/LICENSE`)
+  - Upstream license for the embedded AprilTag implementation
 
 ## Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/AprilTagUnity.git
-   cd AprilTagUnity
-   ```
+1. Copy or reference this repository in your project (for example by using `git submodule` or adding the repository URL through the Unity Package Manager).
+2. In the Unity editor, open **Window ▸ Package Manager**.
+3. Click the **+** button and choose **Add package from disk...**.
+4. Select the `package.json` file located at the root of this repository.
 
-2. **Open in Unity**
-   - Launch Unity Hub
-   - Click "Add" and select the project folder
-   - Open the project with Unity 2022.3 LTS or later
+Unity will import the package and expose the AprilTag components to your project.
 
-3. **Install Dependencies**
-   The project uses Unity Package Manager with the following key dependencies:
-   - `com.meta.xr.sdk.all` (v78.0.0) - Meta XR SDK
-   - `com.unity.xr.openxr` (v1.13.2) - OpenXR support
-   
-   Note: The AprilTag library is locally integrated and doesn't require external package installation.
+## Usage
 
-4. **Build and Deploy**
-   - Connect your Quest headset via USB
-   - Enable Developer Mode in the Quest settings
-   - Build and deploy to your headset
+1. Add an **`AprilTagController`** component to a GameObject.
+2. Configure its detection parameters (tag family, size, decimation, etc.).
+3. Optionally add helper components found under `Runtime/Scripts` (for example the webcam pipeline or visualization helpers) depending on your project needs.
+4. Drive detection from your own scripts by invoking the public API on the controller and related helpers (start/stop detection, create anchors, update visualizations, etc.).
 
-## Quick Start
+See the inline XML documentation in the scripts for a detailed description of each component.
 
-### Basic Setup
+## Requirements
 
-1. **Add AprilTagController to your scene**
-   ```csharp
-   // Create an empty GameObject and add the AprilTagController component
-   var aprilTagController = gameObject.AddComponent<AprilTagController>();
-   ```
-
-2. **Configure the controller**
-   - Assign a `WebCamTextureManager` from Meta's Passthrough Camera samples
-   - Set the tag size in meters (default: 0.08m for 8cm tags)
-   - Configure detection parameters (decimation, frequency, etc.)
-
-3. **Use the setup helper (recommended)**
-   ```csharp
-   // Add AprilTagSetupHelper to automatically configure the controller
-   var setupHelper = gameObject.AddComponent<AprilTagSetupHelper>();
-   setupHelper.SetupAprilTagController();
-   ```
-
-### Sample Scenes
-
-The project includes several sample scenes in `Assets/PassthroughCameraApiSamples/`:
-- **CameraViewer**: Basic camera feed display
-- **MultiObjectDetection**: Advanced object detection examples
-- **StartScene**: Main menu with navigation to all samples
-
-## Configuration
-
-### AprilTagController Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `tagFamily` | Tag family to detect (Tag36h11 or TagStandard41h12) | Tag36h11 |
-| `tagSizeMeters` | Physical size of AprilTag markers | 0.08m |
-| `decimate` | Downscale factor for detection (1-8) | 2 |
-| `maxDetectionsPerSecond` | Detection frequency limit | 15 fps |
-| `horizontalFovDeg` | Camera field of view | 78° |
-| `scaleVizToTagSize` | Scale visualizations to tag size | true |
-
-### Tag Family Selection
-
-- **Tag36h11** (default): Recommended for ArUcO detector compatibility and general use
-- **TagStandard41h12**: Original AprilTag format with higher data density but requires more processing
-
-**Note**: You can download tag images from the [AprilTag Images repository](https://github.com/AprilRobotics/apriltag-imgs). Print them or display them on a screen for testing.
-
-### Performance Tuning
-
-- **Decimation**: Higher values (4-8) improve performance but reduce detection accuracy
-- **Detection Frequency**: Lower values (5-10 fps) reduce CPU usage
-- **Tag Size**: Accurate physical measurements improve pose estimation
-
-## Usage Examples
-
-### Basic Detection
-```csharp
-public class MyAprilTagHandler : MonoBehaviour
-{
-    [SerializeField] private AprilTagController aprilTagController;
-    
-    void Start()
-    {
-        // Configure for tag36h11 (default) or tagStandard41h12
-        aprilTagController.tagFamily = AprilTag.Interop.TagFamily.Tag36h11;
-    }
-    
-    void Update()
-    {
-        // Access detected tags through the controller
-        var detector = aprilTagController.GetDetector();
-        foreach (var tag in detector.DetectedTags)
-        {
-            Debug.Log($"Detected tag {tag.ID} at position {tag.Position}");
-        }
-    }
-}
-```
-
-### Custom Visualization
-```csharp
-// Create custom visualizations for detected tags
-public GameObject customTagPrefab;
-
-void OnTagDetected(int tagId, Vector3 position, Quaternion rotation)
-{
-    var viz = Instantiate(customTagPrefab);
-    viz.transform.SetPositionAndRotation(position, rotation);
-    viz.name = $"Tag_{tagId}";
-}
-```
-
-## Project Structure
-
-```
-Assets/
-├── AprilTag/                    # Core AprilTag implementation
-│   ├── AprilTagController.cs    # Main detection controller
-│   ├── AprilTagSetupHelper.cs   # Automatic setup helper
-│   ├── InputSystemFixer.cs      # Input system compatibility
-│   └── Library/                 # Locally integrated AprilTag library
-│       ├── Runtime/             # C# API and Unity integration
-│       ├── Plugin/              # Native libraries for all platforms
-│       └── README.md            # Library documentation
-├── PassthroughCameraApiSamples/ # Meta's official samples
-│   ├── CameraViewer/            # Basic camera viewer
-│   ├── MultiObjectDetection/    # AI object detection
-│   └── StartScene/              # Main menu scene
-└── Resources/                   # Project resources and settings
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **No WebCamTexture Available**
-   - Ensure Meta's Passthrough Camera API is properly initialized
-   - Check that the WebCamTextureManager is present in the scene
-
-2. **WebCamTexture GPU Initialization Errors**
-   - The system now automatically waits for WebCamTexture to initialize
-   - Uses direct pixel access instead of Graphics.CopyTexture for better reliability
-   - Allow a few seconds for the camera feed to stabilize
-
-3. **Poor Detection Performance**
-   - Increase decimation value (try 4-8)
-   - Reduce detection frequency
-   - Ensure good lighting conditions
-
-4. **Inaccurate Pose Estimation**
-   - Verify the tag size parameter matches your physical tags
-   - Check camera calibration and FOV settings
-   - Ensure tags are not too small or far away
-
-### Debug Logging
-
-Enable debug logging to troubleshoot issues:
-```csharp
-aprilTagController.logDebugInfo = true;
-aprilTagController.logDetections = true;
-```
+- Unity 2021.3 LTS or later
+- Platforms supported by the embedded native libraries (Windows, macOS, Linux, Android, and iOS)
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- **Keijiro Takahashi** for the excellent [AprilTag Unity package](https://github.com/keijiro/jp.keijiro.apriltag) (now locally integrated)
-- **April Robotics Laboratory** for the original [AprilTag system](https://github.com/juchong/apriltag.git)
-- **Meta** for the Passthrough Camera API and XR SDK
-- **Unity Technologies** for the XR framework
-
-## Support
-
-- Create an issue for bug reports or feature requests
-- Check the [Meta XR Documentation](https://developer.oculus.com/documentation/unity/unity-passthrough-camera-api/)
-- Visit the [AprilTag Documentation](https://april.eecs.umich.edu/software/apriltag)
-
----
-
-**Note**: This project requires a Meta Quest headset with Developer Mode enabled. It is designed for VR/MR applications and will not work in standard Unity editor play mode without proper XR setup.
+Pull requests and issue reports are welcome. Please make sure your contributions focus on AprilTag functionality and keep the repository package-oriented.
